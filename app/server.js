@@ -26,6 +26,11 @@ var methods = {
     DELETE: 'DELETE'
 };
 
+var userTypes = {
+    admin: 'admin',
+    guest: 'guest'
+};
+
 var server = http.createServer(function(request, response) {
 
     console.log((new Date()) + ' Received ' + request.method + ' request for ' + request.url);
@@ -106,200 +111,193 @@ var server = http.createServer(function(request, response) {
                 })
 
             }else
-            if(request.url.substring(0, 5) === '/auth'){
-
-                var user = request.body.user;
-                var pass = request.body.pass;
-
-                User.findOne({ username: user }, function(err, user) {
-     
-                    // test a matching password
-                    if(user === null){
-                        response.write( 
-                            JSON.stringify({ 
-                                loggedIn: false, 
-                                user: '', 
-                                err: true, 
-                                errMessage: 'User does not exist.' 
-                            }) 
-                        );
-                    }else{
-
-                        user.comparePassword(password, function(err, isMatch) {
-                            
-                            if (err) {
-
-                                response.write( 
-                                    JSON.stringify({   
-                                        loggedIn: false, 
-                                        user: 'guest', 
-                                        err: true, 
-                                        errMessage: 'An error was encountered. Pleas try again.' 
-                                    }) 
-                                );
-                                console.log('An error was encountered. Pleas try again.');
-
-                            }else{
-
-                                if(isMatch)
-                                    response.write( 
-                                        JSON.stringify({ 
-                                            loggedIn: isMatch, 
-                                            user: user, 
-                                            err: false 
-                                        }) 
-                                    );
-                                else
-                                    response.write( 
-                                        JSON.stringify({ 
-                                            loggedIn: isMatch, 
-                                            user: user, 
-                                            err: true, 
-                                            errMessage: 'Incorrect Password' 
-                                        }) 
-                                    );
-                            }
-                        });
-                    }
-                });
-            }else
-            if(request.url.substring(0, 7) === '/signup'){
+            if(request.url.substring(0, 6) === '/login'){
 
                 var fullBody = '';
+
                 request.on('data', function(chunk) {
                     fullBody += chunk.toString();
                 });
 
-                var decodedBody = querystring.parse(fullBody);
-                var parts = urling.parse(request.url, true).query;
-                console.log(fullBody); return;
-
-                // create a user a new user
-                var newUser = new User({
-                    email: email,
-                    username: username,
-                    password: password,
-                    posts: []
+                request.on('end', function(){
+                    compareUser( JSON.parse(fullBody) );
                 });
-                 
-                // save user to database
-                newUser.save(function(err) {
-                    if (err){
-                        console.log(err, 'user not created');
-                        if(err.code === 11000){
 
-                            response.write(
+                function compareUser( data ){
+
+                    User.findOne({ username: data.user }, function(err, user) {
+         
+                        // test a matching password
+                        if(user === null){
+                            response.end( 
+                                JSON.stringify({ 
+                                    success: false, 
+                                    user: '', 
+                                    err: true, 
+                                    errMessage: 'User does not exist.' 
+                                }) 
+                            );
+                        }else{
+
+                            user.comparePassword(data.pass, function(err, isMatch) {
+                                
+                                if (err) {
+
+                                    response.end( 
+                                        JSON.stringify({   
+                                            success: false, 
+                                            user: 'guest', 
+                                            err: true, 
+                                            errMessage: 'An error was encountered. Pleas try again.' 
+                                        }) 
+                                    );
+                                    console.log('An error was encountered. Pleas try again.');
+
+                                }else{
+
+                                    if(isMatch)
+                                        response.end( 
+                                            JSON.stringify({ 
+                                                success: isMatch, 
+                                                user: user, 
+                                                err: false 
+                                            }) 
+                                        );
+                                    else
+                                        response.end( 
+                                            JSON.stringify({ 
+                                                success: isMatch, 
+                                                user: user, 
+                                                err: true, 
+                                                errMessage: 'Incorrect Password' 
+                                            }) 
+                                        );
+                                }
+                            });
+                        }
+                    });
+                }
+            }else
+            if(request.url.substring(0, 7) === '/signup'){
+
+                var fullBody = '';
+
+                request.on('data', function(chunk) {
+                    fullBody += chunk.toString();
+                });
+
+                request.on('end', function(){
+                    createUser( JSON.parse(fullBody) );
+                });
+
+                function createUser( data ){
+
+                    // create a user a new user
+                    var newUser = new User({
+                        email: data.email,
+                        username: data.user,
+                        password: data.pass,
+                        userType: userTypes['guest']
+                    });
+                     
+                    // save user to database
+                    newUser.save(function(err) {
+                        if (err){
+                            var errMess = 'Username or email already in use. Please try a different one.';
+                            console.log(errMess);
+                            response.end(
                                 JSON.stringify({   
                                     success: false, 
-                                    username: '', 
+                                    user: '', 
                                     err: true, 
-                                    errMessage: 'Username or email already in use. Please try a different one.' 
+                                    errMessage: errMess
                                 })
                             );
                         }else{
-                            response.write(
+                            response.end(
+                                JSON.stringify({ 
+                                    success: true, 
+                                    user: data.user, 
+                                    err: false 
+                                })
+                            );
+                        }
+                    });
+                }
+            }else
+            if(request.url.substring(0, 11) === '/adminsetup'){
+               
+                var fullBody = '';
+
+                request.on('data', function(chunk) {
+                    fullBody += chunk.toString();
+                });
+
+                request.on('end', function(){
+                    createUser( JSON.parse(fullBody) );
+                });
+
+                // create a user a new user
+                function createUser( data ){
+
+                    var newUser = new User({
+                        email: data.email,
+                        username: data.user,
+                        password: data.pass,
+                        userType: userTypes['admin']
+                    });
+
+                    // save user to database
+
+                    User.find({'userType': userTypes['admin']}, function(err, docs){
+
+                        var noAdmin = docs.length === 0;
+
+                        if(noAdmin){
+
+                            newUser.save(function(err) {
+                                if (err){
+                                    var errMess = 'Account could not be created.' ;
+                                    console.log(errMess);
+                                    response.end(
+                                        JSON.stringify({   
+                                            success: false, 
+                                            username: '', 
+                                            err: true, 
+                                            errMessage:errMess
+                                        })
+                                    );
+                                }else{
+                                    console.log('here');
+                                    response.end(
+                                        JSON.stringify({ 
+                                            success: true, 
+                                            username: data.user, 
+                                            err: false 
+                                        })
+                                    );
+                                }
+                            });
+
+                        }else{
+                            var errMess = 'Cannot create duplicate admin account.';
+                            console.log(errMess);
+                            response.end(
                                 JSON.stringify({   
                                     success: false, 
                                     username: '', 
                                     err: true, 
-                                    errMessage: 'Account could not be created.' 
+                                    errMessage:errMess
                                 })
                             );
                         }
-                    }else{
-                        response.write(
-                            JSON.stringify({ 
-                                userCreated: true, 
-                                username: username, 
-                                err: false 
-                            })
-                        );
-                    }
-                });
+                    });
+                }
             }
-            break;
-
 
     }
     
 });
-
-
-/*app.post( '/auth', function(req, res){
-    
-    var username = req.body.username;
-    var password = req.body.password;
-
-    User.findOne({ username: username }, function(err, user) {
-     
-        // test a matching password
-        if(user === null){
-            res.send( JSON.stringify( { success: false, username: '', err: true, errMessage: 'User does not exist.' } ) );
-        }else{
-
-            user.comparePassword(password, function(err, isMatch) {
-                
-                if (err) {
-
-                    res.send( JSON.stringify( 
-                    {   success: false, 
-                        username: '', 
-                        err: true, 
-                        errMessage: 'An error was encountered. Pleas try again.' } ) );
-
-                    console.log('An error was encountered. Pleas try again.');
-
-                }else{
-
-                    if(isMatch){
-                        res.send( JSON.stringify( { success: isMatch, username: username, err: false } ) );
-                    }else{
-                        res.send( JSON.stringify( { success: isMatch, username: username, err: true, errMessage: 'Incorrect Password' } ) );
-                    }
-                }
-            });
-        }
-    });
-});
-
-app.post( '/signup', function(req, res){
-    
-    var email = req.body.email;
-    var username = req.body.username;
-    var password = req.body.password;
-
-    // create a user a new user
-    var newUser = new User({
-        email: email,
-        username: username,
-        password: password
-    });
-     
-    // save user to database
-    newUser.save(function(err) {
-        if (err){
-
-            console.log(err, 'user not created');
-
-            if(err.code === 11000){
-
-                res.send(JSON.stringify( 
-                {   success: false, 
-                    username: '', 
-                    err: true, 
-                    errMessage: 'Username or email already in use. Please try a different one.' }));
-            }else{
-                res.send(JSON.stringify( 
-                {   success: false, 
-                    username: '', 
-                    err: true, 
-                    errMessage: 'Account could not be created.' }));
-            }
-        }else{
-            res.send(JSON.stringify( { userCreated: true, username: username, err: false }));
-        }
-    });
-});*/
 
 server.listen(8000, '127.0.0.1', function() {
 	console.log((new Date()) + ' Server is listening on port 8000');

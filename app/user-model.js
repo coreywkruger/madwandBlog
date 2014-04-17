@@ -7,7 +7,8 @@ var UserSchema = new Schema({
     email: { type: String, required: true },
     username: { type: String, required: true, index: { unique: true } },
     password: { type: String, required: true },
-    posts: []
+    userType: { type: String, required: true},
+    posts: { type: Array }
 });
 
 UserSchema.pre('save', function(next) {

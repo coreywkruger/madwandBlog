@@ -3,8 +3,13 @@
 angular.module('blogApp')
   .provider('Mainsvc', function Mainsvc() {
     	
-    this.userStatus = {loggedIn:false, user:'guest', pass:''};
-
+    this.userStatus = {   
+        success: false, 
+        user: 'guest', 
+        err: false, 
+        errMessage: '' 
+    }
+    
     this.$get = ['$http', function($http){
 
     	var self = this;
@@ -14,23 +19,27 @@ angular.module('blogApp')
     		userStatus: self.userStatus,
 
     		submit: function( user, pass, callback){
+
     			$http({
 					method: 'POST',
 					url: '/login',
 					data: { user: user, pass: pass },
 					headers: { 'Content-Type': 'application/json' }
 				}).success(function (data, status, headers, config) { 
-					
-					self.userStatus.loggedIn = data.loggedIn;
 
-					if(self.userStatus.loggedIn){
+					self.userStatus.success = data.success;
+					self.userStatus.user = data.user;
+					self.userStatus.err = data.err;
+					self.userStatus.errMessage = data.errMessage;
+
+					if(self.userStatus.success){
 						self.userStatus.user = data.user;	
 						self.userStatus.pass = data.pass;					
 					}else{
 						self.userStatus.user = 'guest';
 						self.userStatus.pass = '';
 					}
-					callback(self.userStatus.loggedIn);
+					callback(self.userStatus.success);
 				});
     		},
 
@@ -47,26 +56,60 @@ angular.module('blogApp')
     		},
 
     		signup: function( email, user, pass, callback){
-    			console.log(email,user,pass);
+
 				$http({
 					
 					method: 'POST',
 					url: '/signup',
-					data: { email: email, user: user, pass: pass },
+					data: { 
+						email:email,
+						user:user,
+						pass:pass 
+					},
 					headers: { 'Content-Type': 'application/json' }
 					
 				}).success(function (data, status, headers, config){ 
 						
-					if( data.userCreated ){
-
-						self.userStatus.user = data.user;
-						callback( data.loggedIn, data.errMessage );
-					}else{
-
-						self.currentUser.name = '';
-						callback( data.loggedIn, data.errMessage );
-					}
+					callback(data.success, data.err);
 				});
+			},
+
+			setAdmin: function( email, user, pass, callback){
+
+				$http({
+					
+					method: 'POST',
+					url: '/adminsetup',
+					data: { 
+						email:email,
+						user:user, 
+						pass:pass 
+					},
+					headers: { 'Content-Type': 'application/json' }
+					
+				}).success(function (data, status, headers, config){ 
+
+					callback(data.success, data.err);
+				});
+			},
+
+			checkAdmin: function( email, user, pass, callback){
+
+				$http({
+					
+					method: 'POST',
+					url: '/checkadmin',
+					data: { 
+						user: user, 
+						pass: pass,
+						email: email 
+					},
+					headers: { 'Content-Type': 'application/json' }
+				
+				}).success(function (data, status, headers, config){
+					console.log(data);
+					callback(data.success);
+				})
 			}
     	};
     }];
