@@ -41,6 +41,9 @@ angular.module('blogApp')
     $scope.login = function(){
     	$location.path('/login');
     };
+    $scope.adminStuff = function(){
+    	$location.path('/adminstuff')
+    };
     $scope.post = function(){
     	if($scope.userStatus.success){
     		$location.path('/editor');

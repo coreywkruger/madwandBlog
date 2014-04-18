@@ -11,8 +11,9 @@ angular.module('blogApp')
     }
     
     this.posts = [];
+    this.users = [];
 
-    this.$get = ['$http', function($http){
+    this.$get = ['$http', '$rootScope', function($http, $rootScope){
 
     	var self = this;
 
@@ -22,44 +23,22 @@ angular.module('blogApp')
 
     		posts: self.posts,
 
-    		submit: function( user, pass, callback){
+    		users: self.users,
+
+    		submit: function( data, method, callback){
 
     			$http({
 					method: 'POST',
-					url: '/login',
-					data: { user: user, pass: pass },
-					headers: { 'Content-Type': 'application/json' }
-				}).success(function (data, status, headers, config) { 
-
-					self.userStatus.success = data.success;
-					self.userStatus.user = data.user;
-					self.userStatus.err = data.err;
-					self.userStatus.errMessage = data.errMessage;
-
-					if(self.userStatus.success){
-						self.userStatus.user = data.user;	
-						self.userStatus.pass = data.pass;					
-					}else{
-						self.userStatus.user = 'guest';
-						self.userStatus.pass = '';
-					}
-					callback(self.userStatus.success);
-				});
-    		},
-
-    		makePost: function( data, callback ){
-
-    			$http({
-					method: 'POST',
-					url: '/post',
+					url: '/' + method,
 					data: data,
 					headers: { 'Content-Type': 'application/json' }
-				}).success(function (data, status, headers, config){
+				}).success(function (data, status, headers, config) { 
+					self.userStatus = data;
 					callback(data);
 				});
     		},
 
-    		getPosts: function( callback ){
+    		getPosts: function(callback){
 
     			$http({
 					method: 'GET',
@@ -69,6 +48,16 @@ angular.module('blogApp')
 				}).success(function (data, status, headers, config) { 
 					callback( data );
 				});
+    		},
+
+    		getUsers: function(callback){
+
+    			$http({
+    				method: 'GET',
+    				url: '/users',
+    			}).success(function (data, status, headers, config){
+    				callback(data);
+    			});
     		},
 
     		signup: function( email, user, pass, callback){

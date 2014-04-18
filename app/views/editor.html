@@ -1,8 +1,8 @@
 <div>
-	<input type="text" ng-model="postData.title"></input></br>
-	<input type="text" ng-model="postData.body"></input></br>
-	<input type="text" ng-model="postData.signature"></input></br>
 	<div ng-show="userStatus.success">
+		<input type="text" ng-model="postData.title"></input></br>
+		<input type="text" ng-model="postData.body"></input></br>
+		<input type="text" ng-model="postData.signature"></input></br>
 		<input type="button" value="post" ng-click="makePost()"></input>
 	</div>
 	<div ng-show="!userStatus.success">

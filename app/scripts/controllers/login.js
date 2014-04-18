@@ -18,17 +18,22 @@ angular.module('blogApp')
     $scope.submit = function(){
 
    		Mainsvc.submit(
-   			$scope.loginInfo.user, 
-   			$scope.loginInfo.pass, 
-   			function(success){
+   			{
+   				user: $scope.loginInfo.user, 
+   				pass: $scope.loginInfo.pass
+   			}, 
+   			'login',
+   			function(data){
    				
-	   			if(success)
+   				Mainsvc.userStatus = data;
+   				
+	   			if(data.success)
 	   				$location.path('/editor');
 	   			else
 	   				$location.path('/login');
-	   			$scope.userStatus = Mainsvc.userStatus;
 	   		}
 	   	);
+	   	
     };
 
     $scope.createUser = function(){

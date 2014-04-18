@@ -75,35 +75,19 @@ var server = http.createServer(function(request, response) {
             
             if(action ===  '/posts'){
 
-                //var parts = urling.parse(request.url, true).query;
-                
-                /*data = JSON.stringify([
-                    {title: 'one', body: 'bodyone', time: 'today'},
-                    {title: 'two', body: 'bodytwo', time: 'today'},
-                    {title: 'three', body: 'bodythree', time: 'today'},
-                    {title: 'four', body: 'bodyfour', time: 'today'},
-                    {title: 'five', body: 'bodyfive', time: 'today'},
-                    {title: 'six', body: 'bodysix', time: 'today'},
-                    {title: 'seven', body: 'bodyseven', time: 'today'},
-                    {title: 'eight', body: 'bodyeight', time: 'today'},
-                    {title: 'nine', body: 'bodynine', time: 'today'},
-                    {title: 'ten', body: 'bodyten', time: 'today'},
-                    {title: 'eleven', body: 'bodyeleven', time: 'today'},
-                    {title: 'twelve', body: 'bodytwelve', time: 'today'},
-                    {title: 'thirteen', body: 'bodythirteen', time: 'today'},
-                    {title: 'fourteen', body: 'bodyfourteen', time: 'today'}
-                ]);*/
-                
                 Post.find({}, function(err, posts) {
                     response.end(JSON.stringify(posts));
                 });
 
-                //response.writeHead(200, {'Content-Type': 'application/json'});
-                //response.end(posts);
+            }else
+            if(action === '/users'){
 
+                User.find({}, function(err, users){
+                    response.end(JSON.stringify(users));
+                });
             }else{
 
-                var url = '.' + (request.url == '/' ? '/index.html' : request.url);
+                var url = '.' + (action == '/' ? '/index.html' : request.url);
 
                 fs.readFile(url, function (err, data) {
                 
@@ -214,6 +198,7 @@ var server = http.createServer(function(request, response) {
                     });
                 }
             }
+            break;
 
     }
     

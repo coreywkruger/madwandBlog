@@ -28,6 +28,10 @@ angular.module('blogApp', [
         templateUrl: 'views/adminsetup.html',
         controller: 'LoginCtrl'
       })
+      .when('/adminstuff', {
+        templateUrl: 'views/adminstuff.html',
+        controller: 'AdminstuffCtrl'
+      })
       .otherwise({
         redirectTo: '/'
       });
