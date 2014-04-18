@@ -6,7 +6,6 @@ var http = require('http');
 var fs = require('fs');
 var urling = require('url');
 
-//////////////////////
 //AUTHENTICATION STUFF
 var mongoose = require('mongoose');
 var User = require("./user-model.js");
@@ -16,7 +15,6 @@ mongoose.connect(connStr, function(err) {
     if (err) console.log(err);//throw err;
     console.log('Successfully connected to MongoDB');
 });
-//////////////////////
 //////////////////////
 
 var methods = {
@@ -30,6 +28,28 @@ var userTypes = {
     admin: 'admin',
     guest: 'guest'
 };
+
+function comm( success, user, err, errMessage){
+    return {
+        success: success, 
+        user: user, 
+        err: err, 
+        errMessage: errMessage
+    };
+}
+
+function getBody(req, callback){
+
+    var full = '';
+
+    req.on('data', function(chunk) {
+        full += chunk.toString();
+    });
+
+    req.on('end', function(){
+        callback(full);
+    });
+}
 
 var server = http.createServer(function(request, response) {
 
@@ -60,9 +80,8 @@ var server = http.createServer(function(request, response) {
                     {title: 'fourteen', body: 'bodyfourteen', time: 'today'}
                 ]);
 
-                response.writeHead(200, {'Content-Type': 'application/json'});
-                response.write(data);
-                response.end();
+                //response.writeHead(200, {'Content-Type': 'application/json'});
+                response.end(data);
 
             }else{
 
@@ -88,109 +107,39 @@ var server = http.createServer(function(request, response) {
 
         case methods.POST:
 
-            if(request.url.substring(0, 8) === '/posting'){
-                
-                var fullBody = '';
-                request.on('data', function(chunk) {
-                    fullBody += chunk.toString();
-                });
-
-                request.on('end', function(){
-
-                    response.writeHead('200', 'OK', {'Content-Type': 'text/html'});
-
-                    var decodedBody = querystring.parse(fullBody);
-
-                    var parts = urling.parse(request.url, true).query;
-                    console.log('>>', parts);
-
-                    response.write('<html><head><title>Post data</title></head><body><pre>');  
-                    response.write(utils.inspect(decodedBody.data));              
-                    response.write('</pre></body></html>');       
-                    response.end();
-                })
-
-            }else
             if(request.url.substring(0, 6) === '/login'){
 
-                var fullBody = '';
-
-                request.on('data', function(chunk) {
-                    fullBody += chunk.toString();
+                getBody(request, function(body){
+                    compareUser(response, JSON.parse(body));
                 });
 
-                request.on('end', function(){
-                    compareUser( JSON.parse(fullBody) );
-                });
-
-                function compareUser( data ){
+                function compareUser( res, data ){
 
                     User.findOne({ username: data.user }, function(err, user) {
          
                         // test a matching password
-                        if(user === null){
-                            response.end( 
-                                JSON.stringify({ 
-                                    success: false, 
-                                    user: '', 
-                                    err: true, 
-                                    errMessage: 'User does not exist.' 
-                                }) 
-                            );
-                        }else{
-
-                            user.comparePassword(data.pass, function(err, isMatch) {
-                                
-                                if (err) {
-
-                                    response.end( 
-                                        JSON.stringify({   
-                                            success: false, 
-                                            user: 'guest', 
-                                            err: true, 
-                                            errMessage: 'An error was encountered. Pleas try again.' 
-                                        }) 
-                                    );
-                                    console.log('An error was encountered. Pleas try again.');
-
-                                }else{
-
+                        if(user === null)
+                            res.end(JSON.stringify(new comm(false, 'guest', true, 'User does not exist.')));
+                        else
+                            user.comparePassword(data.pass, function(err, isMatch){
+                                if (err)
+                                    res.end(JSON.stringify(new comm(false, 'guest', true, 'An error was encountered. Pleas try again.')));
+                                else
                                     if(isMatch)
-                                        response.end( 
-                                            JSON.stringify({ 
-                                                success: isMatch, 
-                                                user: user, 
-                                                err: false 
-                                            }) 
-                                        );
+                                        res.end(JSON.stringify(new comm(isMatch, user, false, '')));
                                     else
-                                        response.end( 
-                                            JSON.stringify({ 
-                                                success: isMatch, 
-                                                user: user, 
-                                                err: true, 
-                                                errMessage: 'Incorrect Password' 
-                                            }) 
-                                        );
-                                }
+                                        res.end(JSON.stringify(new comm(isMatch, user, true, 'Incorrect Password')));
                             });
-                        }
                     });
                 }
             }else
             if(request.url.substring(0, 7) === '/signup'){
 
-                var fullBody = '';
-
-                request.on('data', function(chunk) {
-                    fullBody += chunk.toString();
+                getBody(request, function(body){
+                    createUser(response, JSON.parse(body));
                 });
 
-                request.on('end', function(){
-                    createUser( JSON.parse(fullBody) );
-                });
-
-                function createUser( data ){
+                function createUser( res, data ){
 
                     // create a user a new user
                     var newUser = new User({
@@ -202,43 +151,21 @@ var server = http.createServer(function(request, response) {
                      
                     // save user to database
                     newUser.save(function(err) {
-                        if (err){
-                            var errMess = 'Username or email already in use. Please try a different one.';
-                            console.log(errMess);
-                            response.end(
-                                JSON.stringify({   
-                                    success: false, 
-                                    user: '', 
-                                    err: true, 
-                                    errMessage: errMess
-                                })
-                            );
-                        }else{
-                            response.end(
-                                JSON.stringify({ 
-                                    success: true, 
-                                    user: data.user, 
-                                    err: false 
-                                })
-                            );
-                        }
+                        if (err)
+                            res.end(JSON.stringify(new comm(false, '', true, 'Username or email already in use. Please try a different one.')));
+                        else
+                            res.end(JSON.stringify((true, data.user,  false, '')));
                     });
                 }
             }else
             if(request.url.substring(0, 11) === '/adminsetup'){
                
-                var fullBody = '';
-
-                request.on('data', function(chunk) {
-                    fullBody += chunk.toString();
-                });
-
-                request.on('end', function(){
-                    createUser( JSON.parse(fullBody) );
+                getBody(request, function(body){
+                    createUser(response, JSON.parse(body));
                 });
 
                 // create a user a new user
-                function createUser( data ){
+                function createUser( res, data ){
 
                     var newUser = new User({
                         email: data.email,
@@ -253,44 +180,15 @@ var server = http.createServer(function(request, response) {
 
                         var noAdmin = docs.length === 0;
 
-                        if(noAdmin){
-
+                        if(noAdmin)
                             newUser.save(function(err) {
-                                if (err){
-                                    var errMess = 'Account could not be created.' ;
-                                    console.log(errMess);
-                                    response.end(
-                                        JSON.stringify({   
-                                            success: false, 
-                                            username: '', 
-                                            err: true, 
-                                            errMessage:errMess
-                                        })
-                                    );
-                                }else{
-                                    console.log('here');
-                                    response.end(
-                                        JSON.stringify({ 
-                                            success: true, 
-                                            username: data.user, 
-                                            err: false 
-                                        })
-                                    );
-                                }
+                                if(err)
+                                    res.end(JSON.stringify(new comm(false, '', true, 'Account could not be created.')));
+                                else
+                                    res.end(JSON.stringify(new comm(true, data.user, false, '')));
                             });
-
-                        }else{
-                            var errMess = 'Cannot create duplicate admin account.';
-                            console.log(errMess);
-                            response.end(
-                                JSON.stringify({   
-                                    success: false, 
-                                    username: '', 
-                                    err: true, 
-                                    errMessage:errMess
-                                })
-                            );
-                        }
+                        else
+                            res.end(JSON.stringify(new comm(false, '', true, 'Cannot create duplicate admin account.')));
                     });
                 }
             }
