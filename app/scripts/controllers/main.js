@@ -5,13 +5,13 @@ angular.module('blogApp')
 
     $scope.userStatus = Mainsvc.userStatus;
     $scope.paginate = {value:false, page:0, quant:1, limit:4, nums:[]};
-    $scope.posts = [];
+    $scope.posts = Mainsvc.posts;
 
     Mainsvc.getPosts(function(data){
-    	$scope.posts = getPage( data );
+    	Mainsvc.posts = $scope.posts = $scope.getPage( data );
     });
 
-    function getPage( postsAll ){
+    $scope.getPage = function( postsAll ){
     	
     	var list = [];
 
@@ -35,14 +35,14 @@ angular.module('blogApp')
     $scope.navPage = function( pageNum ){
     	$scope.paginate.page = pageNum - 1;
     	Mainsvc.getPosts(function(data){
-	    	$scope.posts = getPage( data );
+	    	$scope.posts = $scope.getPage( data );
 	    });
     };
     $scope.login = function(){
     	$location.path('/login');
     };
     $scope.post = function(){
-    	if($scope.userStatus.loggedIn){
+    	if($scope.userStatus.success){
     		$location.path('/editor');
     	}else{
     		$location.path('login');

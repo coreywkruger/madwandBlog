@@ -10,6 +10,8 @@ angular.module('blogApp')
         errMessage: '' 
     }
     
+    this.posts = [];
+
     this.$get = ['$http', function($http){
 
     	var self = this;
@@ -17,6 +19,8 @@ angular.module('blogApp')
     	return {
 
     		userStatus: self.userStatus,
+
+    		posts: self.posts,
 
     		submit: function( user, pass, callback){
 
@@ -40,6 +44,18 @@ angular.module('blogApp')
 						self.userStatus.pass = '';
 					}
 					callback(self.userStatus.success);
+				});
+    		},
+
+    		makePost: function( data, callback ){
+
+    			$http({
+					method: 'POST',
+					url: '/post',
+					data: data,
+					headers: { 'Content-Type': 'application/json' }
+				}).success(function (data, status, headers, config){
+					callback(data);
 				});
     		},
 

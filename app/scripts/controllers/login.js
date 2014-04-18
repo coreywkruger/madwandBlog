@@ -22,11 +22,10 @@ angular.module('blogApp')
    			$scope.loginInfo.pass, 
    			function(success){
    				
-	   			if(success){
+	   			if(success)
 	   				$location.path('/editor');
-	   			}else{
+	   			else
 	   				$location.path('/login');
-	   			}
 	   			$scope.userStatus = Mainsvc.userStatus;
 	   		}
 	   	);

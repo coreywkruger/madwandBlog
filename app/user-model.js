@@ -8,7 +8,6 @@ var UserSchema = new Schema({
     username: { type: String, required: true, index: { unique: true } },
     password: { type: String, required: true },
     userType: { type: String, required: true},
-    posts: { type: Array }
 });
 
 UserSchema.pre('save', function(next) {
@@ -33,11 +32,15 @@ UserSchema.pre('save', function(next) {
     });
 });
 
-UserSchema.methods.comparePassword = function(candidatePassword, cb) {
-    bcrypt.compare(candidatePassword, this.password, function(err, isMatch) {
-        if (err) return cb(err);
-        cb(null, isMatch);
-    });
+UserSchema.methods.comparePassword = function(candidatePassword, callback) {
+    bcrypt.compare(
+        candidatePassword, 
+        this.password, 
+        function(err, isMatch) {
+            if (err) return callback(err);
+            callback(null, isMatch);
+        }
+    );
 };
 
 module.exports = mongoose.model('User', UserSchema);

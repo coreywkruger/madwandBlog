@@ -6,16 +6,15 @@ var http = require('http');
 var fs = require('fs');
 var urling = require('url');
 
-//AUTHENTICATION STUFF
 var mongoose = require('mongoose');
 var User = require("./user-model.js");
-
-var connStr = 'mongodb://localhost:27017/blogApr';
-mongoose.connect(connStr, function(err) {
-    if (err) console.log(err);//throw err;
-    console.log('Successfully connected to MongoDB');
+var Post = require("./post-model.js");
+mongoose.connect('mongodb://localhost:27017/blogApr', function(err) {
+    if (err)
+        console.log(err);//throw err;
+    else 
+        console.log('Successfully connected to MongoDB');
 });
-//////////////////////
 
 var methods = {
     GET: 'GET',
@@ -51,19 +50,34 @@ function getBody(req, callback){
     });
 }
 
+function makePost(res, data){
+    var newPost = new Post({
+        title:data.title,
+        body:data.body,
+        signature:data.signature,
+        time:new Date()
+    });
+
+    newPost.save(function(err){
+        res.end(JSON.stringify({success: err ? false : true}));
+    });
+}
+
 var server = http.createServer(function(request, response) {
 
     console.log((new Date()) + ' Received ' + request.method + ' request for ' + request.url);
+    
+    var action = request.url.substring(request.url.lastIndexOf('/'));
 
     switch(request.method){
 
         case methods.GET:
             
-            if(request.url.substring(0, 6) ==  '/posts'){
+            if(action ===  '/posts'){
 
                 //var parts = urling.parse(request.url, true).query;
                 
-                data = JSON.stringify([
+                /*data = JSON.stringify([
                     {title: 'one', body: 'bodyone', time: 'today'},
                     {title: 'two', body: 'bodytwo', time: 'today'},
                     {title: 'three', body: 'bodythree', time: 'today'},
@@ -78,10 +92,14 @@ var server = http.createServer(function(request, response) {
                     {title: 'twelve', body: 'bodytwelve', time: 'today'},
                     {title: 'thirteen', body: 'bodythirteen', time: 'today'},
                     {title: 'fourteen', body: 'bodyfourteen', time: 'today'}
-                ]);
+                ]);*/
+                
+                Post.find({}, function(err, posts) {
+                    response.end(JSON.stringify(posts));
+                });
 
                 //response.writeHead(200, {'Content-Type': 'application/json'});
-                response.end(data);
+                //response.end(posts);
 
             }else{
 
@@ -107,7 +125,14 @@ var server = http.createServer(function(request, response) {
 
         case methods.POST:
 
-            if(request.url.substring(0, 6) === '/login'){
+            if(action === '/post'){
+
+                getBody(request, function(body){
+                    makePost(response, JSON.parse(body));
+                });
+
+            }else
+            if(action === '/login'){
 
                 getBody(request, function(body){
                     compareUser(response, JSON.parse(body));
@@ -125,15 +150,12 @@ var server = http.createServer(function(request, response) {
                                 if (err)
                                     res.end(JSON.stringify(new comm(false, 'guest', true, 'An error was encountered. Pleas try again.')));
                                 else
-                                    if(isMatch)
-                                        res.end(JSON.stringify(new comm(isMatch, user, false, '')));
-                                    else
-                                        res.end(JSON.stringify(new comm(isMatch, user, true, 'Incorrect Password')));
+                                    res.end(JSON.stringify(new comm(isMatch, user, isMatch ? false : true, isMatch ? '' : 'Incorrect Password')));
                             });
                     });
                 }
             }else
-            if(request.url.substring(0, 7) === '/signup'){
+            if(action === '/signup'){
 
                 getBody(request, function(body){
                     createUser(response, JSON.parse(body));
@@ -154,11 +176,11 @@ var server = http.createServer(function(request, response) {
                         if (err)
                             res.end(JSON.stringify(new comm(false, '', true, 'Username or email already in use. Please try a different one.')));
                         else
-                            res.end(JSON.stringify((true, data.user,  false, '')));
+                            res.end(JSON.stringify(new comm(true, data.user,  false, '')));
                     });
                 }
             }else
-            if(request.url.substring(0, 11) === '/adminsetup'){
+            if(action === '/adminsetup'){
                
                 getBody(request, function(body){
                     createUser(response, JSON.parse(body));
