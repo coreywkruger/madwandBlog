@@ -50,6 +50,37 @@ function getBody(req, callback){
     });
 }
 
+function compareUser( user, pass, admin, callback ){
+
+    var q = function(){
+        if(admin === true){
+            return {username: user, userType: 'admin'};
+        }else{
+            return {username: user};
+        }
+    }();
+
+    User.findOne(q, function(err, user) {
+        
+        // test a matching password
+        if(user === null){
+            callback(false,'user does not exist');
+        }else{
+            user.comparePassword(pass, function(err, isMatch){
+                if (err){
+                    callback(false,'there was an error');
+                }
+
+                if(isMatch){
+                    callback(true,'success');
+                }else{
+                    callback(false, 'incorrect password');
+                }
+            });
+        }
+    });
+}
+
 function makePost(res, data){
     var newPost = new Post({
         title:data.title,
@@ -119,35 +150,39 @@ var server = http.createServer(function(request, response) {
             if(action === '/login'){
 
                 getBody(request, function(body){
-                    compareUser(response, JSON.parse(body));
+                    var data = JSON.parse(body);
+                    compareUser(data.user, data.pass, false, 
+                        function(success, message){
+                            if(!success){
+                                response.end(JSON.stringify(new comm(false, 'guest', true, message)));
+                                console.log(message);
+                            }else{
+                                response.end(JSON.stringify(new comm(true, data.user, false, '')));
+                                console.log(message);
+                            }
+                        }
+                    );
                 });
-
-                function compareUser( res, data ){
-
-                    User.findOne({ username: data.user }, function(err, user) {
-         
-                        // test a matching password
-                        if(user === null)
-                            res.end(JSON.stringify(new comm(false, 'guest', true, 'User does not exist.')));
-                        else
-                            user.comparePassword(data.pass, function(err, isMatch){
-                                if (err)
-                                    res.end(JSON.stringify(new comm(false, 'guest', true, 'An error was encountered. Pleas try again.')));
-                                else
-                                    res.end(JSON.stringify(new comm(isMatch, user, isMatch ? false : true, isMatch ? '' : 'Incorrect Password')));
-                            });
-                    });
-                }
             }else
             if(action === '/signup'){
 
                 getBody(request, function(body){
-                    createUser(response, JSON.parse(body));
+                    var data = JSON.parse(body);
+                    compareUser(data.adminUser, data.adminPass, true, 
+                        function(success, message){
+                            if(!success){
+                                response.end(JSON.stringify(new comm(false, '', true, message)));
+                                console.log(message);
+                            }else{
+                                createGuest(response, data);
+                                console.log(message);
+                            }
+                        }
+                    );
                 });
 
-                function createUser( res, data ){
+                function createGuest(res, data){
 
-                    // create a user a new user
                     var newUser = new User({
                         email: data.email,
                         username: data.user,
@@ -157,10 +192,12 @@ var server = http.createServer(function(request, response) {
                      
                     // save user to database
                     newUser.save(function(err) {
-                        if (err)
+                        if (err){
+                            console.log('Username or email already in use. Please try a different one.')
                             res.end(JSON.stringify(new comm(false, '', true, 'Username or email already in use. Please try a different one.')));
-                        else
+                        }else{
                             res.end(JSON.stringify(new comm(true, data.user,  false, '')));
+                        }
                     });
                 }
             }else

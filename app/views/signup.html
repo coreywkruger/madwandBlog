@@ -3,7 +3,8 @@
 	<label>Password:&nbsp;</label><input type="text" ng-model="accountInfo.pass" /></br>
 	<label>Confirm Password:&nbsp;</label><input type="text" ng-model="accountInfo.passConf" /></br>
 	<label>Email:&nbsp;</label><input type="text" ng-model="accountInfo.email" /></br>
-	<label>Admin Username:&nbsp;</label><input type="text" ng-model="admin.user" /></br>
-	<label>Admin Password:&nbsp;</label><input type="text" ng-model="admin.pass" /></br>
-	<input type="button"  ng-click="signup()" value="submit" />
+	<label>Admin Username:&nbsp;</label><input type="text" ng-model="accountInfo.adminUser" /></br>
+	<label>Admin Password:&nbsp;</label><input type="text" ng-model="accountInfo.adminPass" /></br>
+	<input type="button"  ng-click="signup()" value="submit" /></br>
+	<div>{{userStatus.errMessage}}</div>
 </div>

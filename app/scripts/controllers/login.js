@@ -11,9 +11,10 @@ angular.module('blogApp')
     	user:'',
     	pass:'',
     	passConf:'',
-    	email:''
+    	email:'',
+    	adminUser:'',
+    	adminPass:''
     };
-    $scope.admin = Mainsvc.admin;
 
     $scope.submit = function(){
 
@@ -45,14 +46,22 @@ angular.module('blogApp')
     };
 
     $scope.signup = function(){
-
-    	Mainsvc.signup(
-    		$scope.accountInfo.email,
-    		$scope.accountInfo.user, 
-    		$scope.accountInfo.pass, 
-    		function(success, err){
-    			$scope.authStatus.value = success;
-    			$scope.authStatus.err = err || '';
+    	console.log($scope.accountInfo);
+    	Mainsvc.submit(
+    		{
+    			email: $scope.accountInfo.email,
+    			user: $scope.accountInfo.user,
+    			pass: $scope.accountInfo.pass,
+    			adminUser: $scope.accountInfo.adminUser,
+    			adminPass: $scope.accountInfo.adminPass
+    		},
+    		'signup',
+    		function(data){
+    			$scope.userStatus.success = data.success;
+    			$scope.userStatus.user = data.user;
+    			$scope.userStatus.err = data.err;
+    			$scope.userStatus.errMessage = data.errMessage;
+    			if(data.success) $location.path('/login');
     		}
     	);
     };

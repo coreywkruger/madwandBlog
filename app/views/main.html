@@ -2,12 +2,16 @@
   <div ng-repeat="n in paginate.nums">
     <input type="button" value="{{n}}" ng-click="navPage(n)" />
   </div>
+  <hr>
   <div ng-repeat="post in posts">
       <div>
         {{post.title}}</br>
         {{post.body}}</br>
         {{post.signature}}</br>
         {{post.time}}</br>
+        <input type="button" value="edit" ng-click="" />
+        <input type="button" value="delete" ng-click="" /></br>
+        <hr>
       </div>
   </div>
 </div>
